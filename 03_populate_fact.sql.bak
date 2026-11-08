@@ -1,0 +1,64 @@
+
+SET search_path TO fisheries, public;
+
+-- Check dimension data before inserting fact records
+SELECT COUNT(*) AS total_dates FROM dim_date;
+SELECT COUNT(*) AS total_ports FROM dim_port;
+SELECT COUNT(*) AS total_species FROM dim_species;
+SELECT COUNT(*) AS total_vessels FROM dim_vessel;
+
+
+
+SET search_path TO fisheries, public;
+
+INSERT INTO fact_landing (
+    date_key,
+    port_key,
+    species_key,
+    vessel_key,
+    landed_kg,
+    landing_value
+)
+SELECT
+    d.date_key,
+    p.port_key,
+    s.species_key,
+    v.vessel_key,
+    ROUND((20 + random() * 480)::numeric, 2),
+    ROUND((500 + random() * 9500)::numeric, 2)
+FROM generate_series(1, 200) AS n(i)
+CROSS JOIN LATERAL (
+    SELECT date_key
+    FROM dim_date
+    WHERE full_date BETWEEN DATE '2025-01-01' AND DATE '2025-12-31'
+    ORDER BY random()
+    LIMIT 1
+) d
+CROSS JOIN LATERAL (
+    SELECT port_key
+    FROM dim_port
+    ORDER BY random()
+    LIMIT 1
+) p
+CROSS JOIN LATERAL (
+    SELECT species_key
+    FROM dim_species
+    ORDER BY random()
+    LIMIT 1
+) s
+CROSS JOIN LATERAL (
+    SELECT vessel_key
+    FROM dim_vessel
+    WHERE is_current = TRUE
+    ORDER BY random()
+    LIMIT 1
+) v;
+
+SELECT COUNT(*) AS total_landings
+FROM fisheries.fact_landing;
+
+SELECT COUNT(*) AS total_landings
+FROM fisheries.fact_landing;
+
+SELECT 'TOTAL LANDINGS = ' || COUNT(*)::text AS result
+FROM fisheries.fact_landing;
